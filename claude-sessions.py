@@ -118,9 +118,36 @@ def decode_project_path(encoded: str) -> str:
     m = re.match(r"^([A-Za-z])--(.*)$", encoded)
     if m:
         drive = m.group(1).upper()
-        rest = m.group(2).replace("-", os.sep)
-        return f"{drive}:{os.sep}{rest}"
-    return encoded.replace("-", os.sep)
+        rest = m.group(2)
+        root = f"{drive}:{os.sep}"
+    else:
+        rest = encoded
+        root = os.sep
+
+    # rest 中的 "-" 可能是路径分隔符、空格、下划线或原始连字符
+    # 策略：逐个 "-" 尝试各种解释，优先匹配文件系统中实际存在的路径
+    segments = rest.split("-")
+    if not segments:
+        return root
+
+    def _resolve(base: str, idx: int) -> str | None:
+        if idx >= len(segments):
+            return base
+        # 从最长的合并段开始，尝试用不同字符连接
+        for end in range(len(segments), idx, -1):
+            joiners = (" ", "_", "-") if end > idx + 1 else (" ",)
+            for joiner in joiners:
+                name = joiner.join(segments[idx:end])
+                candidate = os.path.join(base, name)
+                if os.path.exists(candidate):
+                    result = _resolve(candidate, end)
+                    if result is not None:
+                        return result
+        # 单段作为路径分隔符处理（不检查存在性，作为 fallback）
+        return _resolve(os.path.join(base, segments[idx]), idx + 1)
+
+    result = _resolve(root, 0)
+    return result if result else root
 
 def get_active_pids() -> dict[str, int]:
     active = {}
@@ -412,7 +439,10 @@ class TUI:
         COL_TIME = 12
         COL_GAP = 2
         COL_PROJECT = 30
-        msg_w = cols - 2 - COL_TIME - COL_GAP - COL_PROJECT - COL_GAP
+        msg_w = max(0, cols - 2 - COL_TIME - COL_GAP - COL_PROJECT - COL_GAP)
+
+        if cols < 50:
+            return
 
         hdr = (
             "  "
@@ -559,6 +589,8 @@ class TUI:
                 if self.searching:
                     if key == "ESC" or key == "\x1b":
                         self.searching = False
+                        self.search_query = ""
+                        self.filter_sessions()
                     elif key in ("\r", "\n"):
                         self.searching = False
                     elif key in ("\x08", "\x7f"):
@@ -676,7 +708,7 @@ def main():
 
         cmd = ["claude", "--resume", selected.session_id]
         try:
-            sys.exit(subprocess.run(cmd, shell=True).returncode)
+            sys.exit(subprocess.run(cmd, shell=(sys.platform == "win32")).returncode)
         except Exception as e:
             print(f"无法启动 claude: {e}")
 

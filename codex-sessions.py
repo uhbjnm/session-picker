@@ -543,7 +543,10 @@ class TUI:
         COL_TIME = 12
         COL_GAP = 2
         COL_PROJECT = 30
-        msg_w = cols - 2 - COL_TIME - COL_GAP - COL_PROJECT - COL_GAP
+        msg_w = max(0, cols - 2 - COL_TIME - COL_GAP - COL_PROJECT - COL_GAP)
+
+        if cols < 50:
+            return
 
         hdr = (
             "  "
@@ -691,6 +694,8 @@ class TUI:
                 if self.searching:
                     if key == "ESC" or key == "\x1b":
                         self.searching = False
+                        self.search_query = ""
+                        self.filter_sessions()
                     elif key in ("\r", "\n"):
                         self.searching = False
                     elif key in ("\x08", "\x7f"):
