@@ -653,7 +653,15 @@ def main():
     parser.add_argument("--list", action="store_true", help="仅列出会话（非交互）")
     parser.add_argument("--select", "-s", action="store_true",
                         help="选择模式：TUI 渲染到 stderr，选中结果输出到 stdout")
+    parser.add_argument("--config-dir", help="Claude 配置目录（默认 ~/.claude）")
+    parser.add_argument("--claude-cmd", default="claude", help="恢复会话用的命令（默认 claude）")
     args = parser.parse_args()
+
+    if args.config_dir:
+        global CLAUDE_DIR, PROJECTS_DIR, SESSIONS_DIR
+        CLAUDE_DIR = Path(args.config_dir).expanduser()
+        PROJECTS_DIR = CLAUDE_DIR / "projects"
+        SESSIONS_DIR = CLAUDE_DIR / "sessions"
 
     # --select 模式: TUI 画面输出到 stderr，让 stdout 只给结果
     if args.select:
@@ -668,7 +676,7 @@ def main():
 
     if not sessions:
         loading_out.write(f"{FG_YELLOW}未找到任何会话记录。{RESET}\n")
-        loading_out.write(f"{DIM}请确认 ~/.claude/projects/ 目录存在且包含会话文件。{RESET}\n")
+        loading_out.write(f"{DIM}请确认 {PROJECTS_DIR} 目录存在且包含会话文件。{RESET}\n")
         loading_out.flush()
         return
 
@@ -685,7 +693,7 @@ def main():
                 f"{pad_right(p, 30)}  "
                 f"{m}{active}"
             )
-        print(f"\n{DIM}使用 claude --resume <session-id> 恢复会话{RESET}")
+        print(f"\n{DIM}使用 {args.claude_cmd} --resume <session-id> 恢复会话{RESET}")
         return
 
     tui = TUI(sessions, select_mode=args.select)
@@ -706,11 +714,11 @@ def main():
         else:
             sys.stderr.write(f"项目目录不存在: {project_dir}\n将在当前目录尝试恢复...\n")
 
-        cmd = ["claude", "--resume", selected.session_id]
+        cmd = [args.claude_cmd, "--resume", selected.session_id]
         try:
             sys.exit(subprocess.run(cmd, shell=(sys.platform == "win32")).returncode)
         except Exception as e:
-            print(f"无法启动 claude: {e}")
+            print(f"无法启动 {args.claude_cmd}: {e}")
 
 
 if __name__ == "__main__":

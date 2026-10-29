@@ -94,6 +94,14 @@ python codex-sessions.py  [OPTIONS]
 | `-l`, `--limit` | Max sessions to load (default: 200) |
 | `--list` | Non-interactive text list |
 | `-s`, `--select` | Shell wrapper mode (TUI on stderr, result on stdout) |
+| `--config-dir` | Claude config directory (default: `~/.claude`, `claude-sessions.py` only) |
+| `--claude-cmd` | Command used to resume (default: `claude`, `claude-sessions.py` only) |
+
+For a second Claude account with its own config dir (e.g. `CLAUDE_CONFIG_DIR=~/.claude2` launched via `claude2`):
+
+```bash
+alias cs2='python ~/.claude/scripts/claude-sessions.py --config-dir ~/.claude2 --claude-cmd claude2'
+```
 
 ### Requirements
 
@@ -186,6 +194,14 @@ python codex-sessions.py  [选项]
 | `-l`, `--limit` | 最大加载会话数（默认 200） |
 | `--list` | 非交互式文本列表 |
 | `-s`, `--select` | Shell 包装模式（TUI 输出到 stderr，结果输出到 stdout） |
+| `--config-dir` | Claude 配置目录（默认 `~/.claude`，仅 `claude-sessions.py`） |
+| `--claude-cmd` | 恢复会话用的命令（默认 `claude`，仅 `claude-sessions.py`） |
+
+多账号场景（例如第二个账号使用 `CLAUDE_CONFIG_DIR=~/.claude2`，通过 `claude2` 启动）：
+
+```bash
+alias cs2='python ~/.claude/scripts/claude-sessions.py --config-dir ~/.claude2 --claude-cmd claude2'
+```
 
 ### 环境要求
 
